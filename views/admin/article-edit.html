@@ -1,0 +1,168 @@
+{{extend './common/layout.html'}}
+{{block 'main'}}
+<!-- 头部 -->
+{{include
+'./common/header.html'}}
+<!-- /头部 -->
+<!-- 主体内容 -->
+<div class="content">
+    <!-- 侧边栏 -->
+    {{include
+    './common/aside.html'}}
+    <!-- 侧边栏 -->
+    <div class="main">
+        <!-- 分类标题 -->
+        {{if article}}
+        <div class="title">
+            <h4>
+                用户：{{article.author.username}}</p>
+                文章id：{{@article._id}}</h4>
+        </div>
+        {{else}}
+        <div class="title">
+            <h4>
+                用户：{{userInfo.username}}</p>
+                用户id：{{@userInfo._id}}</h4>
+        </div>
+        {{/if}}
+        <!-- /分类标题 -->
+        <!--enctype 指定提交
+        表单的数据编码格式
+        默认是applocation/x
+        --www-form-urlencoded 以name = lize&email=1288888888@qq.com的类型>
+        -->
+        <form
+                class="form-container"
+                method="post"
+                action="{{link}}"
+                enctype="multipart/form-data">
+            <div class="form-group">
+                <label>标题</label>
+                <input type="text"
+                       class="form-control"
+                       placeholder="请输入文章标题"
+                       name="title"
+                       value="{{article && article.title}}">
+            </div>
+            {{if article}}
+            <div class="form-group">
+                <label>作者</label>
+                <input type="text"
+                       class="form-control"
+                       readonly
+                       name="author"
+                       value="{{@article.author._id}}">
+            </div>
+            {{else}}
+            <div class="form-group">
+                <label>作者</label>
+                <input type="text"
+                       class="form-control"
+                       readonly
+                       name="author"
+                       value="{{@userInfo._id}}">
+            </div>
+            {{/if}}
+            <div class="form-group">
+                <label>发布时间</label>
+                <input type="date"
+                       class="form-control"
+                       {{article ===undefined?'':'readonly'}}
+                       name="publishDate"
+                       value="{{article&&article.publishDate&&dateFormat(article.publishDate,'yyyy-mm-dd')}}">
+            </div>
+            <!--
+            multiple屬性允許一次性多選文件-->
+            <div class="form-group">
+                <label for="exampleInputFile">文章封面</label>
+                <input
+                        id="fileInput"
+                        type="file"
+                        name="cover"
+                        accept="image/gif,image/png,image/jpg,image/jpeg"
+                        value="{{article && article.cover}}"
+                >
+                <div
+                        class="thumbnail-waper"
+
+                >
+                    <img class="img-thumbnail"
+                         id="thumbnail-waper"
+                         src="{{article && article.cover}}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>内容</label>
+                <textarea
+                        class="form-control"
+                        id="editor"
+                        name="content">{{article && article.content}}</textarea>
+            </div>
+            <div class="buttons">
+                <input type="submit"
+                       class="btn btn-primary"
+                       value="{{button}}">
+            </div>
+        </form>
+
+    </div>
+</div>
+<!-- /主体内容 -->
+{{/block}}
+{{block 'script'}}
+<script src="/admin/lib/ckeditor5/ckeditor.js"></script>
+<script type="text/javascript">
+    let editor;
+    ClassicEditor
+        .create(document.querySelector('#editor'),{
+         /*   toolbar: [
+                'bold', 'italic', 'bulletedList', 'numberedList', 'blockQuote',"imageUpload" ]*/
+        })
+        .then(newEditor => {
+            editor = newEditor;
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    // 获取数据
+    // const editorData = editor.getData();
+    //校验图片信息以及实现预览图赋值
+    $(function () {
+        /* $('#datePicker').attr({'valueAsDate': new Date()});*/
+        $("#fileInput").on("change", function (e) {
+            //创建文件读取对象
+            let reader = new FileReader();
+            //读取文件，传入的是用户选择的文件列表
+            reader.readAsDataURL(this.files[0]);
+            //readAsDataURL是异步方法，不能直接通过赋值的方式传递结果，进行onload监听，当onload读取完成之后触发函数
+            reader.onload = function () {
+                //给预览图赋值
+                $("#thumbnail-waper").attr({'src': reader.result});
+                //$(".thumbnail-waper,img").attr({'src': reader.result});
+            };
+            let filePath = this.value;
+            let filename = filePath.replace(/.*(\/|\\)/, "");
+            let fileExt = (/[.]/.exec(filename)) ? /[^.]+$/.exec(filename.toLowerCase()) : '';
+            let fileTypes = ["jpg", "png", "jpeg", "gif"];
+            if (fileExt) {
+                let isLegal = false;
+                for (let i = 0; i < fileTypes.length; i++) {
+                    if (fileTypes[i] === fileExt[0]) {
+                        isLegal = true;
+                        break;
+                    }
+                }
+                if (!isLegal) {
+                    alert('不接收此文件类型，请选择图片类型');
+                    $("#fileInput").val("");
+                    $("#thumbnail-waper").attr({'src': ''});
+                    return;
+                }
+            }
+
+        })
+    })
+
+</script>
+{{/block}}
+
